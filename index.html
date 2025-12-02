@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Practice IT Self-Assessment</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Prop-Types (Required for Recharts UMD) -->
+    <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Recharts -->
+    <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        success: '#10b981',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+        
+        .fade-in { 
+            animation: fadeIn 0.4s ease-out; 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .pulse-soft {
+            animation: pulseSoft 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulseSoft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .progress-ring {
+            transition: stroke-dashoffset 0.5s ease-out;
+        }
+        
+        .option-card {
+            transition: all 0.2s ease;
+        }
+        
+        .option-card:hover {
+            transform: translateX(4px);
+        }
+        
+        .gradient-border {
+            position: relative;
+            background: white;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
+            border-radius: 12px 12px 0 0;
+        }
+        
+        /* Print styles */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .print-break { page-break-before: always; }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
+        const { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } = window.Recharts;
+
+        // --- Icons ---
+        const Shield = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        );
+        const Activity = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        );
+        const Cpu = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+        );
+        const CheckCircle = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        );
+        const XCircle = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        );
+        const AlertTriangle = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        );
+        const ArrowRight = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        );
+        const ArrowLeft = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        );
+        const FileText = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        );
+        const Stethoscope = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v6a2 2 0 0 0 2 2v0a2 2 0 0 0 2-2v-6"/><circle cx="12" cy="4" r="2"/></svg>
+        );
+        const Mail = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        );
+        const Target = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        );
+        const TrendingUp = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        );
+        const RefreshCw = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        );
+        const ChevronDown = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="6 9 12 15 18 9"/></svg>
+        );
+        const ChevronUp = (props) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="18 15 12 9 6 15"/></svg>
+        );
+
+        // --- Data Structure ---
+        const CATEGORIES = {
+            SECURITY: 'Security & Compliance',
+            STRATEGY: 'Strategy & Future',
+            EFFICIENCY: 'Workflow & Ops'
+        };
+
+        const CATEGORY_ICONS = {
+            [CATEGORIES.SECURITY]: Shield,
+            [CATEGORIES.STRATEGY]: Cpu,
+            [CATEGORIES.EFFICIENCY]: Activity
+        };
+
+        const CATEGORY_COLORS = {
+            [CATEGORIES.SECURITY]: { bg: 'bg-teal-100', text: 'text-teal-700', accent: '#14b8a6' },
+            [CATEGORIES.STRATEGY]: { bg: 'bg-purple-100', text: 'text-purple-700', accent: '#a855f7' },
+            [CATEGORIES.EFFICIENCY]: { bg: 'bg-indigo-100', text: 'text-indigo-700', accent: '#6366f1' }
+        };
+
+        const QUESTIONS = [
+            {
+                id: 1,
+                category: CATEGORIES.SECURITY,
+                question: "How does your IT provider demonstrate their own internal security and compliance standards?",
+                options: [
+                    { label: "A", text: "They never mentioned their own IT security and compliance.", score: 0, risk: "high" },
+                    { label: "B", text: "They claim to follow best practices, but cannot provide documentation/certifications.", score: 5, risk: "medium" },
+                    { label: "C", text: "They provide evidence of regular external audits and hold certifications (ISO 27001, SOC 2).", score: 10, risk: "low" }
+                ],
+                insight: "A certified provider significantly reduces your compliance risk exposure."
+            },
+            {
+                id: 2,
+                category: CATEGORIES.SECURITY,
+                question: "What does your provider's security and HIPAA compliance package look like?",
+                options: [
+                    { label: "A", text: "We mostly just have antivirus and a firewall. Security and HIPAA is largely up to us.", score: 0, risk: "high" },
+                    { label: "B", text: "Standard tools (MFA, basic antivirus), but assessments are one-off.", score: 5, risk: "medium" },
+                    { label: "C", text: "Comprehensive: MFA, EDR/MDR, and conduct regular assessments.", score: 10, risk: "low" }
+                ],
+                insight: "Modern threats require layered security with continuous monitoring."
+            },
+            {
+                id: 3,
+                category: CATEGORIES.EFFICIENCY,
+                question: "How involved is your IT provider with your EHR/EMR and clinical workflows?",
+                options: [
+                    { label: "A", text: "They don't touch the EHR. We call the vendor for everything.", score: 0, risk: "high" },
+                    { label: "B", text: "They help with basic connectivity but don't understand clinical workflows.", score: 5, risk: "medium" },
+                    { label: "C", text: "They have direct relationships with our vendor and optimize our workflows.", score: 10, risk: "low" }
+                ],
+                insight: "EHR optimization can save clinicians 2+ hours per day."
+            },
+            {
+                id: 4,
+                category: CATEGORIES.STRATEGY,
+                question: "How many other medical practices does your IT provider support?",
+                options: [
+                    { label: "A", text: "We are one of their few medical clients; they do general small business IT.", score: 0, risk: "high" },
+                    { label: "B", text: "They have a handful of medical clients, but it's a mix of industries.", score: 5, risk: "medium" },
+                    { label: "C", text: "They specialize in healthcare, bringing us 'best practices' learned from others.", score: 10, risk: "low" }
+                ],
+                insight: "Healthcare-focused MSPs understand HIPAA, EHR integrations, and clinical needs."
+            },
+            {
+                id: 5,
+                category: CATEGORIES.STRATEGY,
+                question: "How is your provider guiding you on AI adoption?",
+                options: [
+                    { label: "A", text: "They haven't mentioned it, or just said 'be careful'.", score: 0, risk: "high" },
+                    { label: "B", text: "Generic advice like "use copilot" and an AI policy template.", score: 5, risk: "medium" },
+                    { label: "C", text: "Actively educating us, piloting tools, and setting up safeguards.", score: 10, risk: "low" }
+                ],
+                insight: "AI is transforming healthcare—providers should lead this transition safely."
+            },
+            {
+                id: 6,
+                category: CATEGORIES.EFFICIENCY,
+                question: "How would you describe your relationship regarding planning and strategy?",
+                options: [
+                    { label: "A", text: "Break/Fix. We call when something breaks; they fix it.", score: 0, risk: "high" },
+                    { label: "B", text: "Some proactive support, but we rarely discuss strategy or long-term roadmaps.", score: 5, risk: "medium" },
+                    { label: "C", text: "Significant partnership with regular roadmap meetings.", score: 10, risk: "low" }
+                ],
+                insight: "Strategic IT partnerships correlate with higher practice valuations."
+            },
+            {
+                id: 7,
+                category: CATEGORIES.STRATEGY,
+                question: "Is your provider investing in specialized expertise for the future of healthcare?",
+                options: [
+                    { label: "A", text: "No, they offer the same services they did 5 years ago.", score: 0, risk: "high" },
+                    { label: "B", text: "Keeping the lights on, but no new healthcare innovation teams.", score: 5, risk: "medium" },
+                    { label: "C", text: "Yes, dedicated experts and next-gen vendor relationships.", score: 10, risk: "low" }
+                ],
+                insight: "Healthcare IT is evolving rapidly—your provider should evolve with it."
+            },
+            {
+                id: 8,
+                category: CATEGORIES.EFFICIENCY,
+                question: "Is your provider active in the medical community?",
+                options: [
+                    { label: "A", text: "No, they are invisible outside of our office.", score: 0, risk: "high" },
+                    { label: "B", text: "Occasional event attendance but not deeply involved.", score: 5, risk: "medium" },
+                    { label: "C", text: "Yes, supports societies, speaks at events, integrated in the community.", score: 10, risk: "low" }
+                ],
+                insight: "Community involvement indicates commitment to healthcare excellence."
+            },
+            {
+                id: 9,
+                category: CATEGORIES.SECURITY,
+                question: "The 'Closet' Test: What is the state of your physical IT infrastructure?",
+                options: [
+                    { label: "A", text: "A mess of tangled cables and dust. We try not to look at it.", score: 0, risk: "high" },
+                    { label: "B", text: "It's functional but cluttered.", score: 5, risk: "medium" },
+                    { label: "C", text: "Immaculate, organized, labeled, and secure.", score: 10, risk: "low" }
+                ],
+                insight: "Physical infrastructure care reflects overall IT management quality."
+            },
+            {
+                id: 10,
+                category: CATEGORIES.STRATEGY,
+                question: "How does the provider advise on infrastructure (Cloud vs. On-Premise)?",
+                options: [
+                    { label: "A", text: "They just fix servers we have; haven't discussed a shift.", score: 0, risk: "high" },
+                    { label: "B", text: "They have cloud services, but strategy is unclear.", score: 5, risk: "medium" },
+                    { label: "C", text: "Clear strategy based on performance, cost, and security specifically for us.", score: 10, risk: "low" }
+                ],
+                insight: "Right-sized infrastructure decisions can save 20-40% on IT costs."
+            },
+            {
+                id: 11,
+                category: CATEGORIES.EFFICIENCY,
+                question: "How well does your provider coordinate with third-party vendors (EHR, PACS, Labs)?",
+                options: [
+                    { label: "A", text: "We handle calls ourselves; IT avoids them.", score: 0, risk: "high" },
+                    { label: "B", text: "Occasional help, but mostly tell us to call the vendor.", score: 5, risk: "medium" },
+                    { label: "C", text: "They own vendor relationships and resolve issues directly.", score: 10, risk: "low" }
+                ],
+                insight: "Vendor coordination prevents costly downtime and staff frustration."
+            },
+            {
+                id: 12,
+                category: CATEGORIES.SECURITY,
+                question: "How prepared is your practice for a disaster (ransomware, power loss)?",
+                options: [
+                    { label: "A", text: "Not sure; backups exist but aren't tested.", score: 0, risk: "high" },
+                    { label: "B", text: "Backups exist, but no recovery practice in 12 months.", score: 5, risk: "medium" },
+                    { label: "C", text: "Documented plan, tested recoveries, clear recovery-time targets.", score: 10, risk: "low" }
+                ],
+                insight: "Untested backups fail 40% of the time when actually needed."
+            }
+        ];
+
+        // Industry benchmark (average scores)
+        const INDUSTRY_BENCHMARK = {
+            [CATEGORIES.SECURITY]: 22,
+            [CATEGORIES.STRATEGY]: 20,
+            [CATEGORIES.EFFICIENCY]: 18,
+            total: 60
+        };
+
+        // --- Utility Components ---
+        
+        const CircularProgress = ({ percentage, size = 120, strokeWidth = 8, color = "#3b82f6" }) => {
+            const radius = (size - strokeWidth) / 2;
+            const circumference = radius * 2 * Math.PI;
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            return (
+                <svg width={size} height={size} className="transform -rotate-90">
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke="#e5e7eb"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                    />
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        strokeLinecap="round"
+                        className="progress-ring"
+                    />
+                </svg>
+            );
+        };
+
+        // --- Main Components ---
+
+        const IntroScreen = ({ onStart }) => (
+            <div className="flex flex-col items-center justify-center p-6 md:p-8 text-center fade-in max-w-4xl mx-auto">
+                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-5 rounded-2xl mb-8 shadow-lg">
+                    <Stethoscope className="w-14 h-14 text-white" />
+                </div>
+                
+                <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+                    Medical Practice <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">IT Assessment</span>
+                </h1>
+                
+                <p className="text-lg text-gray-600 max-w-2xl mb-10 leading-relaxed">
+                    Healthcare IT isn't about fixing printers—it's about enabling better patient care. 
+                    Discover where your IT partner stands and identify critical gaps in <strong>3 minutes</strong>.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12 w-full">
+                    {[
+                        { icon: Shield, title: "Security & Compliance", desc: "HIPAA, cybersecurity, disaster readiness", color: "teal" },
+                        { icon: Activity, title: "Workflow & Efficiency", desc: "EHR optimization, vendor coordination", color: "indigo" },
+                        { icon: Cpu, title: "Strategy & Innovation", desc: "AI readiness, future-proofing", color: "purple" }
+                    ].map((item, i) => (
+                        <div key={i} className={`bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow`}>
+                            <div className={`w-12 h-12 rounded-lg bg-${item.color}-100 flex items-center justify-center mb-4 mx-auto`}>
+                                <item.icon className={`w-6 h-6 text-${item.color}-600`} />
+                            </div>
+                            <h3 className="font-semibold text-gray-800 mb-1">{item.title}</h3>
+                            <p className="text-sm text-gray-500">{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="flex flex-col items-center gap-4">
+                    <button 
+                        onClick={onStart}
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-12 rounded-full shadow-lg transition-all transform hover:scale-105 hover:shadow-xl flex items-center gap-3 text-lg"
+                    >
+                        Start Assessment <ArrowRight className="w-5 h-5" />
+                    </button>
+                    <p className="text-sm text-gray-400">12 questions • Takes ~3 minutes</p>
+                </div>
+            </div>
+        );
+
+        const QuizScreen = ({ question, currentStep, totalSteps, onAnswer, toastMessage, selectedLabel, onBack, onNext }) => {
+            const categoryColors = CATEGORY_COLORS[question.category];
+            const CategoryIcon = CATEGORY_ICONS[question.category];
+            
+            // Keyboard navigation
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'ArrowLeft' && currentStep > 1) onBack();
+                    if (e.key === 'ArrowRight' && selectedLabel) onNext();
+                    if (e.key >= '1' && e.key <= '3') {
+                        const idx = parseInt(e.key) - 1;
+                        if (question.options[idx]) {
+                            onAnswer(question.options[idx].score, question.options[idx].label);
+                        }
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [currentStep, selectedLabel, onBack, onNext, onAnswer, question.options]);
+
+            return (
+                <div className="w-full max-w-3xl mx-auto fade-in px-4">
+                    {/* Progress Header */}
+                    <div className="mb-6">
+                        <div className="flex justify-between items-center text-sm font-medium text-gray-500 mb-3">
+                            <span className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${categoryColors.bg.replace('100', '500')}`}></span>
+                                {question.category}
+                            </span>
+                            <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                                {currentStep} / {totalSteps}
+                            </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div 
+                                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500 ease-out" 
+                                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Toast */}
+                    {toastMessage && (
+                        <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 flex items-center slide-up">
+                            <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                            <span>{toastMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Question Card */}
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden gradient-border">
+                        <div className="p-6 md:p-8">
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-snug">
+                                {question.question}
+                            </h2>
+                            
+                            <div className="space-y-3">
+                                {question.options.map((option, idx) => {
+                                    const isSelected = selectedLabel === option.label;
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => onAnswer(option.score, option.label)}
+                                            className={`option-card w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-4 ${
+                                                isSelected 
+                                                    ? 'border-blue-500 bg-blue-50 shadow-md' 
+                                                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                                                isSelected 
+                                                    ? 'bg-blue-600 text-white' 
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}>
+                                                {option.label}
+                                            </div>
+                                            <span className={`pt-2 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                                                {option.text}
+                                            </span>
+                                            {isSelected && (
+                                                <CheckCircle className="w-5 h-5 text-blue-600 ml-auto flex-shrink-0 mt-2" />
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                                
+                                {/* I Don't Know Option */}
+                                <button
+                                    onClick={() => onAnswer(0, 'IDK')}
+                                    className={`w-full text-center p-4 rounded-xl transition-all border-2 border-dashed mt-2 ${
+                                        selectedLabel === 'IDK'
+                                            ? 'bg-gray-100 border-gray-400 text-gray-700'
+                                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300'
+                                    }`}
+                                >
+                                    I'm not sure
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                            <button
+                                onClick={onBack}
+                                disabled={currentStep === 1}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                                    currentStep === 1 
+                                        ? 'text-gray-300 cursor-not-allowed' 
+                                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                                }`}
+                            >
+                                <ArrowLeft className="w-4 h-4" /> Back
+                            </button>
+                            
+                            <p className="text-xs text-gray-400 hidden md:block">
+                                Press 1-3 to select • Arrow keys to navigate
+                            </p>
+                            
+                            {selectedLabel && (
+                                <button
+                                    onClick={onNext}
+                                    className="flex items-center gap-2 px-5 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                                >
+                                    {currentStep === totalSteps ? 'See Results' : 'Next'} <ArrowRight className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const QuestionBreakdown = ({ answers, questions }) => {
+            const [expandedCategory, setExpandedCategory] = useState(null);
+            
+            const groupedQuestions = useMemo(() => {
+                const groups = {};
+                questions.forEach((q, idx) => {
+                    if (!groups[q.category]) groups[q.category] = [];
+                    groups[q.category].push({ ...q, answerIdx: idx });
+                });
+                return groups;
+            }, [questions]);
+
+            const getStatusIcon = (answer, question) => {
+                if (!answer || answer.label === 'IDK') return <AlertTriangle className="w-5 h-5 text-gray-400" />;
+                if (answer.score === 10) return <CheckCircle className="w-5 h-5 text-green-500" />;
+                if (answer.score === 5) return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+                return <XCircle className="w-5 h-5 text-red-500" />;
+            };
+
+            return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        Detailed Question Breakdown
+                    </h3>
+                    
+                    {Object.entries(groupedQuestions).map(([category, categoryQuestions]) => {
+                        const colors = CATEGORY_COLORS[category];
+                        const Icon = CATEGORY_ICONS[category];
+                        const isExpanded = expandedCategory === category;
+                        
+                        const categoryScore = categoryQuestions.reduce((sum, q) => {
+                            const answer = answers[q.answerIdx];
+                            return sum + (answer ? answer.score : 0);
+                        }, 0);
+                        const maxCategoryScore = categoryQuestions.length * 10;
+                        
+                        return (
+                            <div key={category} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                <button
+                                    onClick={() => setExpandedCategory(isExpanded ? null : category)}
+                                    className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center`}>
+                                            <Icon className={`w-5 h-5 ${colors.text}`} />
+                                        </div>
+                                        <div className="text-left">
+                                            <h4 className="font-semibold text-gray-800">{category}</h4>
+                                            <p className="text-sm text-gray-500">{categoryScore} / {maxCategoryScore} points</p>
+                                        </div>
+                                    </div>
+                                    {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                                </button>
+                                
+                                {isExpanded && (
+                                    <div className="border-t border-gray-100 divide-y divide-gray-100">
+                                        {categoryQuestions.map((q) => {
+                                            const answer = answers[q.answerIdx];
+                                            const selectedOption = answer ? q.options.find(o => o.label === answer.label) : null;
+                                            
+                                            return (
+                                                <div key={q.id} className="px-5 py-4">
+                                                    <div className="flex items-start gap-3">
+                                                        {getStatusIcon(answer, q)}
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium text-gray-800 mb-2">{q.question}</p>
+                                                            {selectedOption ? (
+                                                                <p className={`text-sm ${
+                                                                    answer.score === 10 ? 'text-green-600' : 
+                                                                    answer.score === 5 ? 'text-yellow-600' : 'text-red-600'
+                                                                }`}>
+                                                                    <strong>Your answer:</strong> {selectedOption.text}
+                                                                </p>
+                                                            ) : answer?.label === 'IDK' ? (
+                                                                <p className="text-sm text-gray-500 italic">You weren't sure about this one</p>
+                                                            ) : (
+                                                                <p className="text-sm text-gray-400 italic">Not answered</p>
+                                                            )}
+                                                            {answer?.score < 10 && (
+                                                                <p className="text-xs text-blue-600 mt-2 bg-blue-50 px-3 py-1.5 rounded-lg inline-block">
+                                                                    💡 {q.insight}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+
+        const ResultsScreen = ({ score, categoryBreakdown, maxScore, answers }) => {
+            const [email, setEmail] = useState('');
+            const [showEmailSuccess, setShowEmailSuccess] = useState(false);
+            
+            const percentage = Math.round((score / maxScore) * 100);
+            
+            let zone, diagnosis, actions, colorClass, scoreColor;
+            if (score <= 50) {
+                zone = "Critical Risk Zone";
+                diagnosis = "Your provider is functioning as a utility mechanic, not a strategic partner. Your practice is likely overexposed to security risks, missing efficiency gains, and unprepared for the future of healthcare IT.";
+                actions = [
+                    "Schedule an urgent security assessment",
+                    "Request documented disaster recovery procedures",
+                    "Evaluate healthcare-specialized IT providers"
+                ];
+                colorClass = "from-red-500 to-rose-600";
+                scoreColor = "#ef4444";
+            } else if (score <= 85) {
+                zone = "Improvement Needed";
+                diagnosis = "Your IT support is functional but generic. They're keeping the lights on, but aren't helping you optimize operations or navigate the rapidly changing healthcare technology landscape.";
+                actions = [
+                    "Request quarterly strategic planning sessions",
+                    "Ask about EHR workflow optimization",
+                    "Discuss AI readiness and governance"
+                ];
+                colorClass = "from-yellow-500 to-amber-600";
+                scoreColor = "#f59e0b";
+            } else {
+                zone = "High-Maturity Partner";
+                diagnosis = "Congratulations! You have a sophisticated IT partner who understands the business of medicine. You're well-positioned for the future of healthcare technology.";
+                actions = [
+                    "Explore advanced AI and automation opportunities",
+                    "Consider data analytics initiatives",
+                    "Share your success with peers"
+                ];
+                colorClass = "from-green-500 to-emerald-600";
+                scoreColor = "#10b981";
+            }
+
+            const radarData = [
+                { subject: 'Security', A: categoryBreakdown[CATEGORIES.SECURITY], B: INDUSTRY_BENCHMARK[CATEGORIES.SECURITY], fullMark: 40 },
+                { subject: 'Strategy', A: categoryBreakdown[CATEGORIES.STRATEGY], B: INDUSTRY_BENCHMARK[CATEGORIES.STRATEGY], fullMark: 40 },
+                { subject: 'Efficiency', A: categoryBreakdown[CATEGORIES.EFFICIENCY], B: INDUSTRY_BENCHMARK[CATEGORIES.EFFICIENCY], fullMark: 40 },
+            ];
+
+            const handleEmailSubmit = (e) => {
+                e.preventDefault();
+                // In production, this would send to your backend
+                console.log('Email submitted:', email);
+                setShowEmailSuccess(true);
+            };
+
+            return (
+                <div className="w-full max-w-5xl mx-auto fade-in px-4">
+                    {/* Hero Score Section */}
+                    <div className={`bg-gradient-to-r ${colorClass} rounded-2xl p-8 md:p-12 text-white mb-8 relative overflow-hidden`}>
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="relative z-10">
+                            <p className="text-white/80 uppercase tracking-widest text-sm font-semibold mb-2">Assessment Complete</p>
+                            <h1 className="text-3xl md:text-4xl font-extrabold mb-4">{zone}</h1>
+                            
+                            <div className="flex items-center gap-8 flex-wrap">
+                                <div className="relative">
+                                    <CircularProgress percentage={percentage} size={140} strokeWidth={10} color="white" />
+                                    <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                        <span className="text-4xl font-bold">{score}</span>
+                                        <span className="text-sm text-white/70">/ {maxScore}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 min-w-[200px]">
+                                    <p className="text-white/90 leading-relaxed">{diagnosis}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        {/* Category Breakdown */}
+                        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <Target className="w-5 h-5 text-blue-600" />
+                                Your Score vs. Industry Average
+                            </h3>
+                            
+                            <div className="h-72">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart data={radarData}>
+                                        <PolarGrid strokeDasharray="3 3" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
+                                        <PolarRadiusAxis angle={30} domain={[0, 40]} tick={{ fontSize: 10 }} />
+                                        <Radar name="Your Score" dataKey="A" stroke={scoreColor} fill={scoreColor} fillOpacity={0.5} strokeWidth={2} />
+                                        <Radar name="Industry Avg" dataKey="B" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.2} strokeWidth={2} strokeDasharray="5 5" />
+                                        <Legend />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
+                            
+                            {/* Category Score Pills */}
+                            <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                                {Object.entries(categoryBreakdown).map(([cat, catScore]) => {
+                                    const colors = CATEGORY_COLORS[cat];
+                                    const benchmark = INDUSTRY_BENCHMARK[cat];
+                                    const diff = catScore - benchmark;
+                                    return (
+                                        <div key={cat} className={`${colors.bg} ${colors.text} px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2`}>
+                                            {cat.split(' ')[0]}: {catScore}/40
+                                            <span className={`text-xs ${diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                ({diff >= 0 ? '+' : ''}{diff})
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Recommended Actions */}
+                        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-blue-600" />
+                                Recommended Next Steps
+                            </h3>
+                            
+                            <div className="space-y-4">
+                                {actions.map((action, idx) => (
+                                    <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold flex-shrink-0">
+                                            {idx + 1}
+                                        </div>
+                                        <p className="text-gray-700 pt-1">{action}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Email Capture */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                                {!showEmailSuccess ? (
+                                    <div>
+                                        <p className="text-sm text-gray-600 mb-3">Get a detailed PDF report with personalized recommendations:</p>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="your@email.com"
+                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                                            />
+                                            <button
+                                                onClick={handleEmailSubmit}
+                                                disabled={!email}
+                                                className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                            >
+                                                <Mail className="w-4 h-4" /> Send
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-green-50 text-green-700 p-4 rounded-lg flex items-center gap-3">
+                                        <CheckCircle className="w-5 h-5" />
+                                        <span>Report sent! Check your inbox.</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Detailed Breakdown */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mb-8">
+                        <QuestionBreakdown answers={answers} questions={QUESTIONS} />
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row justify-center gap-4 no-print">
+                        <button 
+                            onClick={() => window.location.reload()} 
+                            className="px-8 py-3 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold transition-colors flex items-center justify-center gap-2"
+                        >
+                            <RefreshCw className="w-4 h-4" /> Retake Assessment
+                        </button>
+                        <button 
+                            onClick={() => window.print()} 
+                            className="px-8 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-lg transition-all flex items-center justify-center gap-2"
+                        >
+                            <FileText className="w-4 h-4" /> Save Results
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Main App ---
+        const App = () => {
+            const [view, setView] = useState('intro');
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [answers, setAnswers] = useState([]);
+            const [toast, setToast] = useState(null);
+
+            const handleStart = () => setView('quiz');
+
+            const handleAnswer = useCallback((score, label) => {
+                const currentQuestion = QUESTIONS[currentQuestionIndex];
+                
+                const newAnswers = [...answers];
+                newAnswers[currentQuestionIndex] = { 
+                    score, 
+                    category: currentQuestion.category, 
+                    label 
+                };
+                setAnswers(newAnswers);
+
+                // Motivational toasts
+                const progress = currentQuestionIndex + 1;
+                if (progress === 4) {
+                    setToast("Great start! You're uncovering valuable insights.");
+                    setTimeout(() => setToast(null), 3000);
+                } else if (progress === 8) {
+                    setToast("Two-thirds done! Almost there.");
+                    setTimeout(() => setToast(null), 3000);
+                }
+            }, [currentQuestionIndex, answers]);
+            
+            const handleBack = useCallback(() => {
+                if (currentQuestionIndex > 0) {
+                    setCurrentQuestionIndex(prev => prev - 1);
+                }
+            }, [currentQuestionIndex]);
+            
+            const handleNext = useCallback(() => {
+                if (currentQuestionIndex < QUESTIONS.length - 1) {
+                    setCurrentQuestionIndex(prev => prev + 1);
+                } else if (answers[currentQuestionIndex]) {
+                    setView('results');
+                }
+            }, [currentQuestionIndex, answers]);
+
+            const calculateResults = useMemo(() => {
+                const totalScore = answers.reduce((acc, curr) => acc + (curr ? curr.score : 0), 0);
+                
+                const breakdown = {
+                    [CATEGORIES.SECURITY]: 0,
+                    [CATEGORIES.STRATEGY]: 0,
+                    [CATEGORIES.EFFICIENCY]: 0
+                };
+
+                answers.forEach(a => {
+                    if (a) breakdown[a.category] += a.score;
+                });
+
+                return { totalScore, breakdown };
+            }, [answers]);
+
+            return (
+                <div className="min-h-screen py-8 md:py-12 flex items-center justify-center">
+                    {view === 'intro' && <IntroScreen onStart={handleStart} />}
+                    
+                    {view === 'quiz' && (
+                        <QuizScreen 
+                            question={QUESTIONS[currentQuestionIndex]} 
+                            currentStep={currentQuestionIndex + 1}
+                            totalSteps={QUESTIONS.length}
+                            onAnswer={handleAnswer}
+                            onBack={handleBack}
+                            onNext={handleNext}
+                            toastMessage={toast}
+                            selectedLabel={answers[currentQuestionIndex]?.label}
+                        />
+                    )}
+
+                    {view === 'results' && (
+                        <ResultsScreen 
+                            score={calculateResults.totalScore}
+                            categoryBreakdown={calculateResults.breakdown}
+                            maxScore={QUESTIONS.length * 10}
+                            answers={answers}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
