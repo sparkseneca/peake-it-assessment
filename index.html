@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Medical Practice IT Self-Assessment</title>
 
     <!-- Tailwind CSS -->
@@ -123,13 +123,18 @@
     </div>
     <div id="root"></div>
 
-    <!-- Load scripts in order (no defer here so React is ready before Babel inline script runs) -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- React 17 + ReactDOM 17 (UMD) -->
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script>
+
+    <!-- Recharts UMD -->
     <script src="https://unpkg.com/recharts@2.12.0/umd/Recharts.js"></script>
+
+    <!-- Babel Standalone -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <script type="text/babel" data-presets="react">
+    <!-- Our app: JSX + modern JS, compiled by Babel in the browser -->
+    <script type="text/babel" data-presets="env,react">
         const { useState, useEffect, useMemo, useCallback } = React;
         const { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Legend } = window.Recharts;
 
@@ -421,115 +426,113 @@
             </div>
         );
 
-        const QuizScreen = ({ question, currentStep, totalSteps, onAnswer, toastMessage, selectedLabel, onBack, onNext }) => {
-            return (
-                <div className="w-full max-w-3xl mx-auto fade-in px-4">
-                    {/* Progress Header */}
-                    <div className="mb-6">
-                        <div className="flex justify-between items-center text-sm font-medium text-gray-500 mb-3">
-                            <span className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                                {question.category}
-                            </span>
-                            <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
-                                {currentStep} / {totalSteps}
-                            </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            <div
-                                className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500 ease-out"
-                                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-                            />
-                        </div>
+        const QuizScreen = ({ question, currentStep, totalSteps, onAnswer, toastMessage, selectedLabel, onBack, onNext }) => (
+            <div className="w-full max-w-3xl mx-auto fade-in px-4">
+                {/* Progress Header */}
+                <div className="mb-6">
+                    <div className="flex justify-between items-center text-sm font-medium text-gray-500 mb-3">
+                        <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            {question.category}
+                        </span>
+                        <span className="bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+                            {currentStep} / {totalSteps}
+                        </span>
                     </div>
-
-                    {/* Toast */}
-                    {toastMessage && (
-                        <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 flex items-center slide-up">
-                            <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-                            <span>{toastMessage}</span>
-                        </div>
-                    )}
-
-                    {/* Question Card */}
-                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden gradient-border">
-                        <div className="p-6 md:p-8">
-                            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-snug">
-                                {question.question}
-                            </h2>
-
-                            <div className="space-y-3">
-                                {question.options.map((option, idx) => {
-                                    const isSelected = selectedLabel === option.label;
-                                    return (
-                                        <button
-                                            key={idx}
-                                            onClick={() => onAnswer(option.score, option.label)}
-                                            className={`option-card w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-4 ${
-                                                isSelected
-                                                    ? 'border-blue-500 bg-blue-50 shadow-md'
-                                                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                                            }`}
-                                        >
-                                            <div
-                                                className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
-                                                    isSelected
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-100 text-gray-600'
-                                                }`}
-                                            >
-                                                {option.label}
-                                            </div>
-                                            <span className={`pt-2 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
-                                                {option.text}
-                                            </span>
-                                            {isSelected && (
-                                                <CheckCircle className="w-5 h-5 text-blue-600 ml-auto flex-shrink-0 mt-2" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-
-                                <button
-                                    onClick={() => onAnswer(0, 'IDK')}
-                                    className={`w-full text-center p-4 rounded-xl transition-all border-2 border-dashed mt-2 ${
-                                        selectedLabel === 'IDK'
-                                            ? 'bg-gray-100 border-gray-400 text-gray-700'
-                                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300'
-                                    }`}
-                                >
-                                    I'm not sure
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Navigation */}
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
-                            <button
-                                onClick={onBack}
-                                disabled={currentStep === 1}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                                    currentStep === 1
-                                        ? 'text-gray-300 cursor-not-allowed'
-                                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
-                                }`}
-                            >
-                                <ArrowLeft className="w-4 h-4" /> Back
-                            </button>
-
-                            {selectedLabel && (
-                                <button
-                                    onClick={onNext}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                                >
-                                    {currentStep === totalSteps ? 'See Results' : 'Next'} <ArrowRight className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                            className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                        />
                     </div>
                 </div>
-            );
-        };
+
+                {/* Toast */}
+                {toastMessage && (
+                    <div className="mb-6 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 flex items-center slide-up">
+                        <CheckCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                        <span>{toastMessage}</span>
+                    </div>
+                )}
+
+                {/* Question Card */}
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden gradient-border">
+                    <div className="p-6 md:p-8">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-snug">
+                            {question.question}
+                        </h2>
+
+                        <div className="space-y-3">
+                            {question.options.map((option, idx) => {
+                                const isSelected = selectedLabel === option.label;
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => onAnswer(option.score, option.label)}
+                                        className={`option-card w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-start gap-4 ${
+                                            isSelected
+                                                ? 'border-blue-500 bg-blue-50 shadow-md'
+                                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        <div
+                                            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors ${
+                                                isSelected
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-600'
+                                            }`}
+                                        >
+                                            {option.label}
+                                        </div>
+                                        <span className={`pt-2 ${isSelected ? 'text-gray-900 font-medium' : 'text-gray-700'}`}>
+                                            {option.text}
+                                        </span>
+                                        {isSelected && (
+                                            <CheckCircle className="w-5 h-5 text-blue-600 ml-auto flex-shrink-0 mt-2" />
+                                        )}
+                                    </button>
+                                );
+                            })}
+
+                            <button
+                                onClick={() => onAnswer(0, 'IDK')}
+                                className={`w-full text-center p-4 rounded-xl transition-all border-2 border-dashed mt-2 ${
+                                    selectedLabel === 'IDK'
+                                        ? 'bg-gray-100 border-gray-400 text-gray-700'
+                                        : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300'
+                                }`}
+                            >
+                                I'm not sure
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                        <button
+                            onClick={onBack}
+                            disabled={currentStep === 1}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                                currentStep === 1
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                            }`}
+                        >
+                            <ArrowLeft className="w-4 h-4" /> Back
+                        </button>
+
+                        {selectedLabel && (
+                            <button
+                                onClick={onNext}
+                                className="flex items-center gap-2 px-5 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                            >
+                                {currentStep === totalSteps ? 'See Results' : 'Next'} <ArrowRight className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
 
         const QuestionBreakdown = ({ answers, questions }) => {
             const [expandedCategory, setExpandedCategory] = useState(null);
@@ -674,8 +677,7 @@
                 { subject: 'Efficiency', A: categoryBreakdown[CATEGORIES.EFFICIENCY], B: INDUSTRY_BENCHMARK[CATEGORIES.EFFICIENCY], fullMark: 40 },
             ];
 
-            const handleEmailSubmit = (e) => {
-                e.preventDefault();
+            const handleEmailSubmit = () => {
                 console.log('Email submitted:', email);
                 setShowEmailSuccess(true);
             };
@@ -824,8 +826,8 @@
             const [answers, setAnswers] = useState([]);
             const [toast, setToast] = useState(null);
 
-            // hide loading once React is ready
             useEffect(() => {
+                console.log('App mounted');
                 const el = document.getElementById('loading');
                 if (el) el.style.display = 'none';
             }, []);
@@ -912,9 +914,8 @@
             );
         };
 
-        // Render the app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // Render the app with React 17
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
